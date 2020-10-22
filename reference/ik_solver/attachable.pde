@@ -1,0 +1,3 @@
+interface Attachable {
+  PVector getAttachPoint();
+}
