@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import 'arm_widget.dart';
@@ -39,7 +37,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage>
     with SingleTickerProviderStateMixin {
-  List<Anchor> arms = [];
+  Anchor arm;
   Offset ballLoc = Offset(0, 0);
   Offset ballVelocity = Offset(0, 0);
 
@@ -73,15 +71,13 @@ class _MyHomePageState extends State<MyHomePage>
       ballVelocity = ballVelocity.translate(0, gravity * elapsedSeconds);
     }
 
-    for (Anchor arm in arms) {
-      Offset overlap = arm.overlaps(ballLoc, 12.5);
-      if (overlap != null) {
-        ballFrozen = false;
-        ballLoc -= overlap;
+    Offset overlap = arm.overlaps(ballLoc, 12.5);
+    if (overlap != null) {
+      ballFrozen = false;
+      ballLoc -= overlap;
 
-        if (elapsedSeconds > 0) {
-          ballVelocity = (ballLoc - lastBallLoc) / elapsedSeconds;
-        }
+      if (elapsedSeconds > 0) {
+        ballVelocity = (ballLoc - lastBallLoc) / elapsedSeconds;
       }
     }
 
@@ -97,27 +93,20 @@ class _MyHomePageState extends State<MyHomePage>
 
   _initializeArms() {
     for (int i = 0; i < 1; i++) {
-      Anchor arm = Anchor(loc: Offset(0, 0));
+      arm = Anchor(loc: Offset(0, 0));
       Bone b = Bone(70.0, arm);
-      arm.setChild(b);
+      arm.child = b;
       Bone b2 = Bone(70.0, b);
-      b.setChild(b2);
-      arms.add(arm);
+      b.child = b2;
     }
   }
 
   @override
   void didChangeDependencies() {
-    // TODO: implement didChangeDependencies
     super.didChangeDependencies();
 
-    int idx = 0;
     Size screenSize = MediaQuery.of(context).size;
-    for (Anchor arm in arms) {
-      double oneNth = (screenSize.width / arms.length);
-      arm.loc = Offset(oneNth * idx++ + oneNth / 2,
-          (1 + (idx % 2) * 2) / 4 * screenSize.height);
-    }
+    arm.loc = Offset(screenSize.width / 2, 3 / 4 * screenSize.height);
 
     ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
   }
@@ -129,43 +118,36 @@ class _MyHomePageState extends State<MyHomePage>
         behavior: HitTestBehavior.translucent,
         onPanUpdate: (DragUpdateDetails deets) {
           setState(() {
-            for (Anchor arm in arms) {
-              arm.solve(deets.globalPosition);
-            }
+            arm.solve(deets.globalPosition);
           });
         },
         onPanStart: (DragStartDetails deets) {
           setState(() {
-            for (Anchor arm in arms) {
-              arm.solve(deets.globalPosition);
-            }
+            arm.solve(deets.globalPosition);
           });
         },
-        child: Stack(
-            children: arms
-                    .map((arm) => Positioned.fill(child: Arm(anchor: arm)))
-                    .toList() +
-                [
-                  Positioned.fill(
-                      child: Stack(alignment: Alignment.center, children: [
-                    AnimatedBuilder(
-                        animation: controller,
-                        builder: (context, _) {
-                          return Positioned(
-                            left: ballLoc.dx - 25 / 2,
-                            top: ballLoc.dy - 25 / 2,
-                            child: Container(
-                              width: 25,
-                              height: 25,
-                              decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(9999))),
-                            ),
-                          );
-                        }),
-                  ])),
-                ]),
+        child: Stack(children: [
+          Positioned.fill(child: Arm(anchor: arm)),
+          Positioned.fill(
+              child: Stack(alignment: Alignment.center, children: [
+            AnimatedBuilder(
+                animation: controller,
+                builder: (context, _) {
+                  return Positioned(
+                    left: ballLoc.dx - 25 / 2,
+                    top: ballLoc.dy - 25 / 2,
+                    child: Container(
+                      width: 25,
+                      height: 25,
+                      decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius:
+                              BorderRadius.all(Radius.circular(9999))),
+                    ),
+                  );
+                }),
+          ])),
+        ]),
       ),
     );
   }

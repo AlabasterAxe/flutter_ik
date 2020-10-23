@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/animation.dart';
-
 import 'attachable.dart';
 import 'bone.dart';
 
@@ -15,98 +13,22 @@ const double strokeWidth = 5.0;
 class Anchor extends Attachable {
   Offset loc;
   Bone child;
-  AnimationController controller;
   double firstAngleTarget;
   double secondAngleTarget;
   Duration lastProgressCall = Duration();
 
-  Anchor({this.loc, this.controller}) {
-    if (this.controller != null) {
-      this.controller.addListener(_progressTowardsTarget);
-    }
-  }
+  Anchor({this.loc});
 
-  _progressTowardsTarget() {
-    Bone bone1 = child; //<>//
-    Bone bone2 = bone1.getChild();
-
-    double elapsedSeconds =
-        (controller.lastElapsedDuration - lastProgressCall).inMilliseconds /
-            1000;
-
-    if (firstAngleTarget != null && bone1.angle != firstAngleTarget) {
-      double trueTarget = firstAngleTarget;
-      double diff = (bone1.angle - firstAngleTarget);
-      if (diff.abs() > pi) {
-        trueTarget = firstAngleTarget + pi * 2 * diff.sign;
-      }
-
-      double velocity = min(
-          RADIANS_PER_SECOND * ((trueTarget - bone1.angle) / pi),
-          RADIANS_PER_SECOND);
-      if (trueTarget > bone1.angle) {
-        double proposedBoneAngle = bone1.angle + velocity * elapsedSeconds;
-        if (proposedBoneAngle > trueTarget) {
-          bone1.setAngle(trueTarget);
-        } else {
-          bone1.setAngle(proposedBoneAngle);
-        }
-      } else {
-        double proposedBoneAngle = bone1.angle - velocity * elapsedSeconds;
-        if (proposedBoneAngle < trueTarget) {
-          bone1.setAngle(trueTarget);
-        } else {
-          bone1.setAngle(proposedBoneAngle);
-        }
-      }
-    }
-
-    if (secondAngleTarget != null && bone2.angle != secondAngleTarget) {
-      double trueTarget = secondAngleTarget;
-      double diff = (bone2.angle - secondAngleTarget);
-      if (diff.abs() > pi) {
-        trueTarget = secondAngleTarget + pi * 2 * diff.sign;
-      }
-
-      if (trueTarget > bone2.angle) {
-        double proposedBoneAngle =
-            bone2.angle + RADIANS_PER_SECOND * elapsedSeconds;
-        if (proposedBoneAngle > trueTarget) {
-          bone2.setAngle(trueTarget);
-        } else {
-          bone2.setAngle(proposedBoneAngle);
-        }
-      } else {
-        double proposedBoneAngle =
-            bone2.angle - RADIANS_PER_SECOND * elapsedSeconds;
-        if (proposedBoneAngle < trueTarget) {
-          bone2.setAngle(trueTarget);
-        } else {
-          bone2.setAngle(proposedBoneAngle);
-        }
-      }
-    }
-
-    lastProgressCall = controller.lastElapsedDuration;
-  }
-
-  void setChild(Bone b) {
-    child = b;
-  }
-
-  Bone getChild() {
-    return child;
-  }
-
+  @override
   Offset getAttachPoint() {
     return loc;
   }
 
-  double lawOfCosines(double a, double b, double c) {
+  double _lawOfCosines(double a, double b, double c) {
     return acos((pow(a, 2) + pow(b, 2) - pow(c, 2)) / (2 * a * b));
   }
 
-  List<Offset> getCircleIntersection(
+  List<Offset> _circleIntersection(
       Offset center1, double radius1, Offset center2, double radius2) {
     Offset distanceOffset = (center2 - center1);
 
@@ -116,7 +38,7 @@ class Anchor extends Attachable {
       return [];
     }
 
-    double angle1 = lawOfCosines(radius2, distanceOffset.distance, radius1);
+    double angle1 = _lawOfCosines(radius2, distanceOffset.distance, radius1);
 
     if (angle1 == 0) {
       return [
@@ -134,20 +56,15 @@ class Anchor extends Attachable {
   void solve(Offset target) {
     // TODO: Generalize to more than two bones;
     Bone bone1 = child; //<>//
-    Bone bone2 = bone1.getChild();
+    Bone bone2 = bone1.child;
 
     List<Offset> jointPoints =
-        getCircleIntersection(loc, bone1.len, target, bone2.len);
+        _circleIntersection(loc, bone1.len, target, bone2.len);
 
     if (jointPoints.length < 1) {
       double newAngle = (target - loc).direction;
-      if (controller != null) {
-        firstAngleTarget = newAngle;
-        secondAngleTarget = newAngle;
-      } else {
-        bone1.setAngle(newAngle);
-        bone2.setAngle(newAngle);
-      }
+      bone1.angle = newAngle;
+      bone2.angle = newAngle;
       return;
     }
 
@@ -168,13 +85,8 @@ class Anchor extends Attachable {
 
     double secondAngle = (target - closestPoint).direction;
 
-    if (controller != null) {
-      firstAngleTarget = firstAngle;
-      secondAngleTarget = secondAngle;
-    } else {
-      bone1.setAngle(firstAngle);
-      bone2.setAngle(secondAngle);
-    }
+    bone1.angle = firstAngle;
+    bone2.angle = secondAngle;
   }
 
   double _distToSegment(Offset center, Offset start, Offset end) {

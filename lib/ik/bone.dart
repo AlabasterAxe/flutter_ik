@@ -23,20 +23,6 @@ class Bone implements Attachable {
   }
 
   Offset getAttachPoint() {
-    double endX = getLoc().dx + len * cos(angle);
-    double endY = getLoc().dy + len * sin(angle);
-    return Offset(endX, endY);
-  }
-
-  void setChild(Bone child) {
-    this.child = child;
-  }
-
-  void setAngle(double newAngle) {
-    this.angle = newAngle;
-  }
-
-  Bone getChild() {
-    return child;
+    return getLoc() + Offset.fromDirection(angle, len);
   }
 }
