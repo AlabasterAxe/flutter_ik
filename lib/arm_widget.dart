@@ -12,6 +12,10 @@ class ArmPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    Paint blueFill = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
     Paint blackFill = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.fill;
@@ -21,14 +25,14 @@ class ArmPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5;
 
-    canvas.drawCircle(anchor.loc, jointRadius, blackFill);
-
     Bone child = anchor.child;
     while (child != null) {
       canvas.drawCircle(child.getAttachPoint(), jointRadius, blackFill);
       canvas.drawLine(child.getLoc(), child.getAttachPoint(), blackStroke);
       child = child.child;
     }
+
+    canvas.drawCircle(anchor.loc, jointRadius * 1.5, blueFill);
   }
 
   @override
