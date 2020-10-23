@@ -85,6 +85,12 @@ class _MyHomePageState extends State<MyHomePage>
       }
     }
 
+    Size screenSize = MediaQuery.of(context).size;
+    if (ballLoc.dx < -30 || ballLoc.dx > screenSize.width + 30) {
+      ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+      ballFrozen = true;
+    }
+
     lastBallLoc = ballLoc;
     lastUpdateCall = controller.lastElapsedDuration;
   }

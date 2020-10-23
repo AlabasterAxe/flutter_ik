@@ -102,81 +102,33 @@ class Anchor extends Attachable {
     return loc;
   }
 
+  double lawOfCosines(double a, double b, double c) {
+    return acos((pow(a, 2) + pow(b, 2) - pow(c, 2)) / (2 * a * b));
+  }
+
   List<Offset> getCircleIntersection(
       Offset center1, double radius1, Offset center2, double radius2) {
-    List<Offset> intersectionPoints = new List<Offset>();
-    if (center1.dy - center2.dy != 0.0) {
-      double ySlope = -(center1.dx - center2.dx) / (center1.dy - center2.dy);
-      double yIntercept = (pow(center1.dy, 2) -
-              pow(center2.dy, 2) +
-              pow(center1.dx, 2) -
-              pow(center2.dx, 2) -
-              (pow(radius1, 2) - pow(radius2, 2))) /
-          (2 * (center1.dy - center2.dy));
+    Offset distanceOffset = (center2 - center1);
 
-      double a = 1 + pow(ySlope, 2);
-      double b =
-          2 * yIntercept * ySlope - 2 * center1.dx - 2 * ySlope * center1.dy;
-      double c = pow(center1.dx, 2) +
-          pow(center1.dy, 2) -
-          2 * center1.dy * yIntercept -
-          pow(radius1, 2) +
-          pow(yIntercept, 2);
-
-      double discriminant = pow(b, 2) - 4 * a * c;
-      if (discriminant < 0) {
-        // They do not intersect!
-        return intersectionPoints;
-      }
-
-      double intersectionX1 = (-b + sqrt(discriminant)) / (2 * a);
-      double intersectionY1 = ySlope * intersectionX1 + yIntercept;
-      intersectionPoints.add(new Offset(intersectionX1, intersectionY1));
-      if (discriminant > 0) {
-        // There are two intersection points.
-        double intersectionX2 = (-b - sqrt(discriminant)) / (2 * a);
-        double intersectionY2 = ySlope * intersectionX2 + yIntercept;
-
-        intersectionPoints.add(new Offset(intersectionX2, intersectionY2));
-        double thing = sqrt(discriminant);
-        //print(thing);
-      }
-    } else {
-      double xSlope = -(center1.dy - center2.dy) / (center1.dx - center2.dx);
-      double xIntercept = (pow(center1.dx, 2) -
-              pow(center2.dx, 2) +
-              pow(center1.dy, 2) -
-              pow(center2.dy, 2) -
-              (pow(radius2, 2) - pow(radius1, 2))) /
-          (2 * (center1.dx - center2.dx));
-
-      double a = 1 + pow(xSlope, 2);
-      double b =
-          2 * xIntercept * xSlope - 2 * center1.dy - 2 * xSlope * center1.dx;
-      double c = pow(center1.dy, 2) +
-          pow(center1.dx, 2) -
-          2 * center1.dx * xIntercept -
-          pow(radius2, 2) +
-          pow(xIntercept, 2);
-
-      double discriminant = pow(b, 2) - 4 * a * c;
-      if (discriminant < 0) {
-        // They do not intersect!
-        return intersectionPoints;
-      }
-
-      double intersectionY1 = (-b + sqrt(discriminant)) / (2 * a);
-      double intersectionX1 = xSlope * intersectionY1 + xIntercept;
-      intersectionPoints.add(new Offset(intersectionX1, intersectionY1));
-      if (discriminant > 0) {
-        // There are two intersection points.
-        double intersectionY2 = (-b - sqrt(discriminant)) / (2 * a);
-        double intersectionX2 = xSlope * intersectionY2 + xIntercept;
-
-        intersectionPoints.add(new Offset(intersectionX2, intersectionY2));
-      }
+    // if the distance between their centers are greater than the sum of
+    // their radii, they must not intersect.
+    if (distanceOffset.distance > radius1 + radius2) {
+      return [];
     }
-    return intersectionPoints;
+
+    double angle1 = lawOfCosines(radius2, distanceOffset.distance, radius1);
+
+    if (angle1 == 0) {
+      return [
+        center1 + Offset.fromDirection(distanceOffset.direction, radius1)
+      ];
+    }
+
+    Offset iPoint1 = center1 +
+        Offset.fromDirection(distanceOffset.direction + angle1, radius1);
+    Offset iPoint2 = center1 +
+        Offset.fromDirection(distanceOffset.direction - angle1, radius1);
+    return [iPoint1, iPoint2];
   }
 
   void solve(Offset target) {
@@ -212,11 +164,9 @@ class Anchor extends Attachable {
     // what angle of bone two starting from target and being length of bone two,
     // will have an endpoint bone1 length away from a
 
-    double firstAngle =
-        atan2(closestPoint.dy - loc.dy, closestPoint.dx - loc.dx);
+    double firstAngle = (closestPoint - loc).direction;
 
-    double secondAngle =
-        atan2(target.dy - closestPoint.dy, target.dx - closestPoint.dx);
+    double secondAngle = (target - closestPoint).direction;
 
     if (controller != null) {
       firstAngleTarget = firstAngle;
