@@ -89,19 +89,18 @@ class Anchor extends Attachable {
     bone2.angle = secondAngle;
   }
 
-  double _distToSegment(Offset center, Offset start, Offset end) {
+  Offset _distToSegment(Offset center, Offset start, Offset end) {
     var segmentLength = (start - end).distanceSquared;
     if (segmentLength == 0) {
-      return (center - start).distance;
+      return (center - start);
     }
     var t = ((center.dx - start.dx) * (end.dx - start.dx) +
             (center.dy - start.dy) * (end.dy - start.dy)) /
         segmentLength;
     t = max(0, min(1, t));
     return (center -
-            Offset(start.dx + t * (end.dx - start.dx),
-                start.dy + t * (end.dy - start.dy)))
-        .distance;
+        Offset(start.dx + t * (end.dx - start.dx),
+            start.dy + t * (end.dy - start.dy)));
   }
 
   Offset _circleLineIntersection(
@@ -111,9 +110,10 @@ class Anchor extends Attachable {
     Offset end,
     double lineWidth,
   ) {
-    var dist = _distToSegment(center, start, end);
-    if (dist < radius + lineWidth / 2) {
-      return Offset.fromDirection((start - end).direction + pi / 2, dist / 4);
+    var offset = _distToSegment(center, start, end);
+    double overlap = (radius + lineWidth / 2) - offset.distance;
+    if (overlap > 0) {
+      return Offset.fromDirection(-offset.direction, overlap);
     }
     return null;
   }
