@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'arm_widget.dart';
@@ -6,6 +8,7 @@ import 'ik/bone.dart';
 
 const double gravity = 100;
 const double dragCoefficient = 0;
+const double ballSize = 50;
 
 void main() {
   runApp(MyApp());
@@ -44,9 +47,11 @@ class _MyHomePageState extends State<MyHomePage>
   AnimationController controller;
 
   bool ballFrozen = true;
+  bool armLocked = true;
 
   Duration lastUpdateCall = Duration();
   Offset lastBallLoc = Offset(0, 0);
+  double maxScore = 0;
 
   @override
   void initState() {
@@ -57,6 +62,14 @@ class _MyHomePageState extends State<MyHomePage>
     controller.addListener(_update);
   }
 
+  _yToScore(double y, double screenHeight) {
+    return -(y - screenHeight);
+  }
+
+  _scoreToY(double score, double screenHeight) {
+    return -score + screenHeight;
+  }
+
   _update() {
     if (!controller.isAnimating) {
       return;
@@ -65,13 +78,20 @@ class _MyHomePageState extends State<MyHomePage>
     double elapsedSeconds =
         (controller.lastElapsedDuration - lastUpdateCall).inMilliseconds / 1000;
 
+    Size screenSize = MediaQuery.of(context).size;
     if (!ballFrozen) {
       ballLoc += ballVelocity * elapsedSeconds;
+      double score = _yToScore(ballLoc.dy, screenSize.height);
+      if (score > maxScore) {
+        setState(() {
+          maxScore = score;
+        });
+      }
       ballVelocity *= (1 - dragCoefficient * elapsedSeconds);
       ballVelocity = ballVelocity.translate(0, gravity * elapsedSeconds);
     }
 
-    Offset overlap = arm.overlaps(ballLoc, 12.5);
+    Offset overlap = arm.overlaps(ballLoc, ballSize / 2);
     if (overlap != null) {
       ballFrozen = false;
       ballLoc -= overlap;
@@ -81,10 +101,14 @@ class _MyHomePageState extends State<MyHomePage>
       }
     }
 
-    Size screenSize = MediaQuery.of(context).size;
-    if (ballLoc.dx < -30 || ballLoc.dx > screenSize.width + 30) {
+    if (ballLoc.dx < -30 ||
+        ballLoc.dx > screenSize.width + 30 ||
+        ballLoc.dy > screenSize.height + 30) {
       ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
       ballFrozen = true;
+      arm.child.angle = -pi / 2;
+      arm.child.child.angle = -pi / 2;
+      armLocked = true;
     }
 
     lastBallLoc = ballLoc;
@@ -113,32 +137,62 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   Widget build(BuildContext context) {
+    Size screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onPanUpdate: (DragUpdateDetails deets) {
           setState(() {
-            arm.solve(deets.globalPosition);
+            if (!armLocked) {
+              arm.solve(deets.globalPosition);
+            }
           });
         },
         onPanStart: (DragStartDetails deets) {
           setState(() {
-            arm.solve(deets.globalPosition);
+            if (!armLocked) {
+              arm.solve(deets.globalPosition);
+            }
           });
         },
+        onTap: () {
+          armLocked = false;
+        },
         child: Stack(children: [
-          Positioned.fill(child: Arm(anchor: arm)),
+          AnimatedBuilder(
+              animation: controller,
+              builder: (context, snapshot) {
+                double screenScalar = max(
+                    _yToScore(ballLoc.dy, screenSize.height) /
+                        screenSize.height,
+                    1);
+                Size logicalScreenSize = screenSize * screenScalar;
+                return Positioned(
+                    bottom: 0,
+                    left: (logicalScreenSize.width - screenSize.width) / 2,
+                    width: screenSize.width / screenScalar,
+                    height: screenSize.height / screenScalar,
+                    child: Arm(anchor: arm, scaleFactor: 1 / screenScalar));
+              }),
           Positioned.fill(
               child: Stack(alignment: Alignment.center, children: [
             AnimatedBuilder(
                 animation: controller,
                 builder: (context, _) {
+                  double screenScalar = max(
+                      _yToScore(ballLoc.dy, screenSize.height) /
+                          screenSize.height,
+                      1);
+                  Size logicalScreenSize = screenSize * screenScalar;
                   return Positioned(
-                    left: ballLoc.dx - 25 / 2,
-                    top: ballLoc.dy - 25 / 2,
+                    left: (logicalScreenSize.width - screenSize.width) / 2 +
+                        (ballLoc.dx / screenScalar) -
+                        (ballSize / screenScalar) / 2,
+                    top: max(ballLoc.dy - ballSize / 2, 0),
                     child: Container(
-                      width: 25,
-                      height: 25,
+                      width: ballSize / screenScalar,
+                      height: ballSize / screenScalar,
                       decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius:
@@ -146,7 +200,24 @@ class _MyHomePageState extends State<MyHomePage>
                     ),
                   );
                 }),
+            // AnimatedBuilder(
+            //     animation: controller,
+            //     builder: (context, _) {
+            //       return Positioned(
+            //         left: 0,
+            //         top: _scoreToY(maxScore, screenSize.height),
+            //         right: 0,
+            //         child: Container(
+            //           height: 5,
+            //           decoration: BoxDecoration(color: Colors.green),
+            //         ),
+            //       );
+            //     }),
           ])),
+          Align(
+              alignment: Alignment(0, -.5),
+              child:
+                  Text("${maxScore.round()}", style: TextStyle(fontSize: 48)))
         ]),
       ),
     );

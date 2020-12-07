@@ -8,7 +8,8 @@ const double jointRadius = 10;
 
 class ArmPainter extends CustomPainter {
   final Anchor anchor;
-  ArmPainter(this.anchor);
+  final double scaleFactor;
+  ArmPainter(this.anchor, this.scaleFactor);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -23,16 +24,19 @@ class ArmPainter extends CustomPainter {
     Paint blackStroke = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5;
+      ..strokeWidth = (jointRadius / 2) * scaleFactor;
 
     Bone child = anchor.child;
     while (child != null) {
-      canvas.drawCircle(child.getAttachPoint(), jointRadius, blackFill);
-      canvas.drawLine(child.getLoc(), child.getAttachPoint(), blackStroke);
+      canvas.drawCircle(child.getAttachPoint() * scaleFactor,
+          jointRadius * scaleFactor, blackFill);
+      canvas.drawLine(child.getLoc() * scaleFactor,
+          child.getAttachPoint() * scaleFactor, blackStroke);
       child = child.child;
     }
 
-    canvas.drawCircle(anchor.loc, jointRadius * 1.5, blueFill);
+    canvas.drawCircle(
+        anchor.loc * scaleFactor, jointRadius * scaleFactor * 1.5, blueFill);
   }
 
   @override
@@ -43,12 +47,13 @@ class ArmPainter extends CustomPainter {
 
 class Arm extends StatelessWidget {
   final Anchor anchor;
-  const Arm({Key key, this.anchor}) : super(key: key);
+  final double scaleFactor;
+  const Arm({Key key, this.anchor, this.scaleFactor}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: ArmPainter(anchor),
+      painter: ArmPainter(anchor, scaleFactor),
     );
   }
 }
