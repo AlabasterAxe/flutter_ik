@@ -21,20 +21,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  final String title;
+  MyHomePage({Key key}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -52,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage>
   bool armLocked = true;
 
   Duration lastUpdateCall = Duration();
-  Offset lastBallLoc = Offset(0, 0);
+  Offset _lastBallLoc = Offset(0, 0);
   double maxScoreY;
   double offset = 0;
   double currentScoreOpacity = 0;
@@ -111,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage>
       ballLoc -= overlap;
 
       if (elapsedSeconds > 0) {
-        ballVelocity = (ballLoc - lastBallLoc) / elapsedSeconds;
+        ballVelocity = (ballLoc - _lastBallLoc) / elapsedSeconds;
       }
     }
 
@@ -122,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage>
       armLocked = true;
     }
 
-    lastBallLoc = ballLoc;
+    _lastBallLoc = ballLoc;
     lastUpdateCall = controller.lastElapsedDuration;
   }
 
@@ -283,7 +276,7 @@ class _MyHomePageState extends State<MyHomePage>
                             painter: WarningTapePainter(screenScalar))));
               }),
           AnimatedAlign(
-              duration: Duration(milliseconds: 1),
+              duration: Duration(milliseconds: 300),
               alignment: Alignment(0, -.5 - offset),
               child: Text(
                   "${maxScoreY == null ? 0 : _yToScore(maxScoreY, screenSize.height).round()}",
