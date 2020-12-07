@@ -101,8 +101,8 @@ class _MyHomePageState extends State<MyHomePage>
       }
     }
 
-    if (ballLoc.dx < -30 ||
-        ballLoc.dx > screenSize.width + 30 ||
+    if (ballLoc.dx < ballSize / 3 ||
+        ballLoc.dx > screenSize.width - ballSize / 3 ||
         ballLoc.dy > screenSize.height + 30) {
       ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
       ballFrozen = true;
@@ -186,7 +186,7 @@ class _MyHomePageState extends State<MyHomePage>
                       1);
                   Size armSize = screenSize / screenScalar;
                   return Positioned(
-                    left: (screenSize.width / armSize.width) / 2 +
+                    left: (screenSize.width - armSize.width) / 2 +
                         (ballLoc.dx / screenScalar) -
                         (ballSize / screenScalar) / 2,
                     top: max(ballLoc.dy - ballSize / 2, 0),
