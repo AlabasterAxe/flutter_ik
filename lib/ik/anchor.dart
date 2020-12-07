@@ -6,9 +6,9 @@ import 'bone.dart';
 
 const double RADIANS_PER_SECOND = 2;
 
-const double jointRadius = 10.0;
-const double anchorRadius = 15.0;
-const double strokeWidth = 5.0;
+const double jointRadius = 30.0;
+const double anchorRadius = 30.0;
+const double strokeWidth = 10.0;
 
 class Anchor extends Attachable {
   Offset loc;

@@ -54,6 +54,8 @@ class _MyHomePageState extends State<MyHomePage>
   Duration lastUpdateCall = Duration();
   Offset lastBallLoc = Offset(0, 0);
   double maxScoreY;
+  double offset = 0;
+  double currentScoreOpacity = 0;
 
   @override
   void initState() {
@@ -102,6 +104,10 @@ class _MyHomePageState extends State<MyHomePage>
     Offset overlap = arm.overlaps(ballLoc, ballSize / 2);
     if (overlap != null) {
       ballFrozen = false;
+      setState(() {
+        offset = .1;
+        currentScoreOpacity = 1;
+      });
       ballLoc -= overlap;
 
       if (elapsedSeconds > 0) {
@@ -109,13 +115,10 @@ class _MyHomePageState extends State<MyHomePage>
       }
     }
 
-    if (ballLoc.dx < ballSize / 3 ||
-        ballLoc.dx > screenSize.width - ballSize / 3 ||
+    if (ballLoc.dx < ballSize / 2 ||
+        ballLoc.dx > screenSize.width - ballSize / 2 ||
         ballLoc.dy > screenSize.height + 30) {
-      ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
       ballFrozen = true;
-      arm.child.angle = -pi / 2;
-      arm.child.child.angle = -pi / 2;
       armLocked = true;
     }
 
@@ -133,6 +136,20 @@ class _MyHomePageState extends State<MyHomePage>
       b.child = b2;
       arm.child.child.angle = -pi / 2;
     }
+  }
+
+  _reset() {
+    Size screenSize = MediaQuery.of(context).size;
+
+    arm.child.angle = -pi / 2;
+    arm.child.child.angle = -pi / 2;
+    ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+    ballFrozen = true;
+    armLocked = false;
+    setState(() {
+      currentScoreOpacity = 0;
+      offset = 0;
+    });
   }
 
   @override
@@ -208,7 +225,7 @@ class _MyHomePageState extends State<MyHomePage>
           });
         },
         onTap: () {
-          armLocked = false;
+          _reset();
         },
         child: Stack(children: [
           AnimatedBuilder(
@@ -229,11 +246,6 @@ class _MyHomePageState extends State<MyHomePage>
           Positioned.fill(
               child:
                   Stack(alignment: Alignment.center, children: stackChildren)),
-          Align(
-              alignment: Alignment(0, -.5),
-              child: Text(
-                  "${maxScoreY == null ? 0 : _yToScore(maxScoreY, screenSize.height).round()}",
-                  style: TextStyle(fontSize: 48))),
           AnimatedBuilder(
               animation: controller,
               builder: (context, _) {
@@ -247,7 +259,10 @@ class _MyHomePageState extends State<MyHomePage>
                     width: (screenSize.width - armSize.width) / 2,
                     top: 0,
                     bottom: 0,
-                    child: CustomPaint(painter: WarningTapePainter()));
+                    child: ClipRect(
+                        clipper: WarningTapeClipper(),
+                        child: CustomPaint(
+                            painter: WarningTapePainter(screenScalar))));
               }),
           AnimatedBuilder(
               animation: controller,
@@ -262,8 +277,30 @@ class _MyHomePageState extends State<MyHomePage>
                     width: (screenSize.width - armSize.width) / 2,
                     top: 0,
                     bottom: 0,
-                    child: CustomPaint(painter: WarningTapePainter()));
+                    child: ClipRect(
+                        clipper: WarningTapeClipper(),
+                        child: CustomPaint(
+                            painter: WarningTapePainter(screenScalar))));
               }),
+          AnimatedAlign(
+              duration: Duration(milliseconds: 1),
+              alignment: Alignment(0, -.5 - offset),
+              child: Text(
+                  "${maxScoreY == null ? 0 : _yToScore(maxScoreY, screenSize.height).round()}",
+                  style: TextStyle(fontSize: 48))),
+          AnimatedOpacity(
+            duration: Duration(milliseconds: 300),
+            opacity: currentScoreOpacity,
+            child: AnimatedAlign(
+                duration: Duration(milliseconds: 300),
+                alignment: Alignment(0, -.5 + offset),
+                child: AnimatedBuilder(
+                  animation: controller,
+                  builder: (context, _) => Text(
+                      "${maxScoreY == null ? 0 : _yToScore(ballLoc.dy, screenSize.height).round()}",
+                      style: TextStyle(fontSize: 48)),
+                )),
+          )
         ]),
       ),
     );

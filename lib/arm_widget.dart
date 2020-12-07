@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'ik/bone.dart';
 import 'ik/anchor.dart';
 
-const double jointRadius = 10;
+const double jointRadius = 30;
 
 class ArmPainter extends CustomPainter {
   final Anchor anchor;
@@ -36,7 +36,7 @@ class ArmPainter extends CustomPainter {
     }
 
     canvas.drawCircle(
-        anchor.loc * scaleFactor, jointRadius * scaleFactor * 1.5, blueFill);
+        anchor.loc * scaleFactor, jointRadius * scaleFactor, blueFill);
   }
 
   @override
