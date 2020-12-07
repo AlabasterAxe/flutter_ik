@@ -167,12 +167,12 @@ class _MyHomePageState extends State<MyHomePage>
                     _yToScore(ballLoc.dy, screenSize.height) /
                         screenSize.height,
                     1);
-                Size logicalScreenSize = screenSize * screenScalar;
+                Size armSize = screenSize / screenScalar;
                 return Positioned(
                     bottom: 0,
-                    left: (logicalScreenSize.width - screenSize.width) / 2,
-                    width: screenSize.width / screenScalar,
-                    height: screenSize.height / screenScalar,
+                    left: (screenSize.width - armSize.width) / 2,
+                    width: armSize.width,
+                    height: armSize.height,
                     child: Arm(anchor: arm, scaleFactor: 1 / screenScalar));
               }),
           Positioned.fill(
@@ -184,9 +184,9 @@ class _MyHomePageState extends State<MyHomePage>
                       _yToScore(ballLoc.dy, screenSize.height) /
                           screenSize.height,
                       1);
-                  Size logicalScreenSize = screenSize * screenScalar;
+                  Size armSize = screenSize / screenScalar;
                   return Positioned(
-                    left: (logicalScreenSize.width - screenSize.width) / 2 +
+                    left: (screenSize.width / armSize.width) / 2 +
                         (ballLoc.dx / screenScalar) -
                         (ballSize / screenScalar) / 2,
                     top: max(ballLoc.dy - ballSize / 2, 0),
