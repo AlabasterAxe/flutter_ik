@@ -20,10 +20,6 @@ class ViewTransformation {
     double bYSpan = this.to.top - this.to.bottom;
 
     ym = aYSpan / bYSpan;
-
-    if ((xm.abs() - ym.abs()).abs() > .1) {
-      print("non uniform scaling!");
-    }
   }
 
   Offset forward(Offset point) {
@@ -39,16 +35,10 @@ class ViewTransformation {
   }
 
   double scaleForwards(double val) {
-    if ((xm.abs() - ym.abs()).abs() > .1) {
-      print("non uniform scaling: ${(xm - ym).abs()}");
-    }
     return val / xm;
   }
 
   double scaleBackwards(double val) {
-    if ((xm.abs() - ym.abs()).abs() > .1) {
-      print("non uniform scaling: ${(xm - ym).abs()}");
-    }
     return val * xm;
   }
 }

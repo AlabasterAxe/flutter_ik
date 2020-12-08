@@ -39,42 +39,44 @@ class _MyHomePageState extends State<MyHomePage>
   Offset ballWorldLoc = Offset(0, 0);
   Offset ballWorldVelocity = Offset(0, 0);
 
-  AnimationController controller;
+  AnimationController _controller;
 
-  bool ballFrozen = true;
-  bool armLocked = true;
+  bool _ballFrozen = true;
+  bool _armLocked = true;
 
-  Duration lastUpdateCall = Duration();
+  Duration _lastUpdateCall = Duration();
   Offset _lastBallLoc = Offset(0, 0);
-  double maxScoreY;
-  double offset = 0;
-  double currentScoreOpacity = 0;
+  double _maxScoreY;
+  double _scoreOffsets = 0;
+  double _currentScoreOpacity = 0;
 
-  int scoreLock;
+  int _scoreLock;
 
   @override
   void initState() {
     super.initState();
-    controller = AnimationController(vsync: this, duration: Duration(days: 99));
-    controller.forward();
+    _controller =
+        AnimationController(vsync: this, duration: Duration(days: 99));
+    _controller.forward();
     _initializeArms();
-    controller.addListener(_update);
+    _controller.addListener(_update);
   }
 
   _update() {
-    if (!controller.isAnimating) {
+    if (!_controller.isAnimating) {
       return;
     }
 
     double elapsedSeconds =
-        (controller.lastElapsedDuration - lastUpdateCall).inMilliseconds / 1000;
+        (_controller.lastElapsedDuration - _lastUpdateCall).inMilliseconds /
+            1000;
 
     Size screenSize = MediaQuery.of(context).size;
-    if (!ballFrozen) {
+    if (!_ballFrozen) {
       ballWorldLoc += ballWorldVelocity * elapsedSeconds;
-      if (maxScoreY == null || ballWorldLoc.dy > maxScoreY) {
+      if (_maxScoreY == null || ballWorldLoc.dy > _maxScoreY) {
         setState(() {
-          maxScoreY = ballWorldLoc.dy;
+          _maxScoreY = ballWorldLoc.dy;
         });
       }
       ballWorldVelocity =
@@ -83,11 +85,11 @@ class _MyHomePageState extends State<MyHomePage>
 
     Offset overlap = arm.overlaps(ballWorldLoc, ballSize / 2);
     if (overlap != null) {
-      ballFrozen = false;
+      _ballFrozen = false;
       setState(() {
-        offset = .1;
-        currentScoreOpacity = 1;
-        scoreLock = null;
+        _scoreOffsets = .1;
+        _currentScoreOpacity = 1;
+        _scoreLock = null;
       });
       ballWorldLoc -= overlap;
 
@@ -99,12 +101,12 @@ class _MyHomePageState extends State<MyHomePage>
     if (ballWorldLoc.dx < ballSize / 2 ||
         ballWorldLoc.dx > screenSize.width - ballSize / 2 ||
         ballWorldLoc.dy < -ballSize / 2) {
-      ballFrozen = true;
-      armLocked = true;
+      _ballFrozen = true;
+      _armLocked = true;
     }
 
     _lastBallLoc = ballWorldLoc;
-    lastUpdateCall = controller.lastElapsedDuration;
+    _lastUpdateCall = _controller.lastElapsedDuration;
   }
 
   _initializeArms() {
@@ -123,16 +125,16 @@ class _MyHomePageState extends State<MyHomePage>
     Size screenSize = MediaQuery.of(context).size;
 
     setState(() {
-      currentScoreOpacity = 0;
-      offset = 0;
-      scoreLock = ballWorldLoc.dy.round();
+      _currentScoreOpacity = 0;
+      _scoreOffsets = 0;
+      _scoreLock = ballWorldLoc.dy.round();
     });
     arm.loc = Offset(screenSize.width / 2, screenSize.height / 4);
     arm.child.angle = -pi / 2;
     arm.child.child.angle = -pi / 2;
     ballWorldLoc = Offset(screenSize.width / 4, screenSize.height / 4);
-    ballFrozen = true;
-    armLocked = false;
+    _ballFrozen = true;
+    _armLocked = false;
   }
 
   @override
@@ -163,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage>
         behavior: HitTestBehavior.translucent,
         onPanUpdate: (DragUpdateDetails deets) {
           setState(() {
-            if (!armLocked) {
+            if (!_armLocked) {
               ViewTransformation vt = ViewTransformation(
                   from:
                       Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
@@ -174,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage>
         },
         onPanStart: (DragStartDetails deets) {
           setState(() {
-            if (!armLocked) {
+            if (!_armLocked) {
               ViewTransformation vt = ViewTransformation(
                   from:
                       Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
@@ -189,7 +191,7 @@ class _MyHomePageState extends State<MyHomePage>
         child: Stack(children: [
           Positioned.fill(
               child: AnimatedBuilder(
-                  animation: controller,
+                  animation: _controller,
                   builder: (context, _) {
                     double screenScalar = max(
                         (ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
@@ -215,10 +217,10 @@ class _MyHomePageState extends State<MyHomePage>
                       ),
                     ];
 
-                    if (maxScoreY != null) {
+                    if (_maxScoreY != null) {
                       stackChildren.add(Positioned(
                         left: 0,
-                        top: vt.forward(Offset(0, maxScoreY)).dy -
+                        top: vt.forward(Offset(0, _maxScoreY)).dy -
                             ballSize / screenScalar / 2 -
                             5,
                         right: 0,
@@ -255,19 +257,19 @@ class _MyHomePageState extends State<MyHomePage>
                   })),
           AnimatedAlign(
               duration: Duration(milliseconds: 300),
-              alignment: Alignment(0, -.5 - offset),
-              child: Text("${maxScoreY == null ? 0 : maxScoreY.round()}",
+              alignment: Alignment(0, -.5 - _scoreOffsets),
+              child: Text("${_maxScoreY == null ? 0 : _maxScoreY.round()}",
                   style: TextStyle(fontSize: 48))),
           AnimatedOpacity(
             duration: Duration(milliseconds: 300),
-            opacity: currentScoreOpacity,
+            opacity: _currentScoreOpacity,
             child: AnimatedAlign(
                 duration: Duration(milliseconds: 300),
-                alignment: Alignment(0, -.5 + offset),
+                alignment: Alignment(0, -.5 + _scoreOffsets),
                 child: AnimatedBuilder(
-                  animation: controller,
+                  animation: _controller,
                   builder: (context, _) => Text(
-                      "${scoreLock != null ? scoreLock : ballWorldLoc.dy.round()}",
+                      "${_scoreLock != null ? _scoreLock : ballWorldLoc.dy.round()}",
                       style: TextStyle(fontSize: 48)),
                 )),
           )
