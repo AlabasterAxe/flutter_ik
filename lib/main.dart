@@ -36,8 +36,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage>
     with SingleTickerProviderStateMixin {
   Anchor arm;
-  Offset ballLoc = Offset(0, 0);
-  Offset ballVelocity = Offset(0, 0);
+  Offset ballWorldLoc = Offset(0, 0);
+  Offset ballWorldVelocity = Offset(0, 0);
 
   AnimationController controller;
 
@@ -82,40 +82,41 @@ class _MyHomePageState extends State<MyHomePage>
 
     Size screenSize = MediaQuery.of(context).size;
     if (!ballFrozen) {
-      ballLoc += ballVelocity * elapsedSeconds;
+      ballWorldLoc += ballWorldVelocity * elapsedSeconds;
       if (maxScoreY == null ||
-          _yToScore(ballLoc.dy, screenSize.height) >
+          _yToScore(ballWorldLoc.dy, screenSize.height) >
               _yToScore(maxScoreY, screenSize.height)) {
         setState(() {
-          maxScoreY = ballLoc.dy;
+          maxScoreY = ballWorldLoc.dy;
         });
       }
-      ballVelocity *= (1 - dragCoefficient * elapsedSeconds);
-      ballVelocity = ballVelocity.translate(0, gravity * elapsedSeconds);
+      ballWorldVelocity *= (1 - dragCoefficient * elapsedSeconds);
+      ballWorldVelocity =
+          ballWorldVelocity.translate(0, gravity * elapsedSeconds);
     }
 
-    Offset overlap = arm.overlaps(ballLoc, ballSize / 2);
+    Offset overlap = arm.overlaps(ballWorldLoc, ballSize / 2);
     if (overlap != null) {
       ballFrozen = false;
       setState(() {
         offset = .1;
         currentScoreOpacity = 1;
       });
-      ballLoc -= overlap;
+      ballWorldLoc -= overlap;
 
       if (elapsedSeconds > 0) {
-        ballVelocity = (ballLoc - _lastBallLoc) / elapsedSeconds;
+        ballWorldVelocity = (ballWorldLoc - _lastBallLoc) / elapsedSeconds;
       }
     }
 
-    if (ballLoc.dx < ballSize / 2 ||
-        ballLoc.dx > screenSize.width - ballSize / 2 ||
-        ballLoc.dy > screenSize.height + 30) {
+    if (ballWorldLoc.dx < ballSize / 2 ||
+        ballWorldLoc.dx > screenSize.width - ballSize / 2 ||
+        ballWorldLoc.dy > screenSize.height + 30) {
       ballFrozen = true;
       armLocked = true;
     }
 
-    _lastBallLoc = ballLoc;
+    _lastBallLoc = ballWorldLoc;
     lastUpdateCall = controller.lastElapsedDuration;
   }
 
@@ -136,7 +137,7 @@ class _MyHomePageState extends State<MyHomePage>
 
     arm.child.angle = -pi / 2;
     arm.child.child.angle = -pi / 2;
-    ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+    ballWorldLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
     ballFrozen = true;
     armLocked = false;
     setState(() {
@@ -152,53 +153,12 @@ class _MyHomePageState extends State<MyHomePage>
     Size screenSize = MediaQuery.of(context).size;
     arm.loc = Offset(screenSize.width / 2, 3 / 4 * screenSize.height);
 
-    ballLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+    ballWorldLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
   }
 
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
-
-    List<Widget> stackChildren = [
-      AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) {
-            double screenScalar = max(
-                (_yToScore(ballLoc.dy, screenSize.height) + ballBuffer) /
-                    screenSize.height,
-                1);
-            Size armSize = screenSize / screenScalar;
-            return Positioned(
-              left: (screenSize.width - armSize.width) / 2 +
-                  (ballLoc.dx / screenScalar) -
-                  (ballSize / screenScalar) / 2,
-              top: max(ballLoc.dy - ballSize / 2, ballBuffer),
-              child: Container(
-                width: ballSize / screenScalar,
-                height: ballSize / screenScalar,
-                decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.all(Radius.circular(9999))),
-              ),
-            );
-          }),
-    ];
-
-    if (maxScoreY != null) {
-      stackChildren.add(AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) {
-            return Positioned(
-              left: 0,
-              top: _scoreToY(maxScoreY, screenSize.width, ballLoc.dy) - 5,
-              right: 0,
-              child: Container(
-                height: 5,
-                decoration: BoxDecoration(color: Colors.green),
-              ),
-            );
-          }));
-    }
 
     return Scaffold(
       body: GestureDetector(
@@ -225,7 +185,8 @@ class _MyHomePageState extends State<MyHomePage>
               animation: controller,
               builder: (context, snapshot) {
                 double screenScalar = max(
-                    (_yToScore(ballLoc.dy, screenSize.height) + ballBuffer) /
+                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
+                            ballBuffer) /
                         screenSize.height,
                     1);
                 Size armSize = screenSize / screenScalar;
@@ -237,13 +198,54 @@ class _MyHomePageState extends State<MyHomePage>
                     child: Arm(anchor: arm, scaleFactor: 1 / screenScalar));
               }),
           Positioned.fill(
-              child:
-                  Stack(alignment: Alignment.center, children: stackChildren)),
+              child: AnimatedBuilder(
+                  animation: controller,
+                  builder: (context, _) {
+                    double screenScalar = max(
+                        (_yToScore(ballWorldLoc.dy, screenSize.height) +
+                                ballBuffer) /
+                            screenSize.height,
+                        1);
+                    Size armSize = screenSize / screenScalar;
+                    List<Widget> stackChildren = [
+                      Positioned(
+                        left: (screenSize.width - armSize.width) / 2 +
+                            (ballWorldLoc.dx / screenScalar) -
+                            (ballSize / screenScalar) / 2,
+                        top: max(ballWorldLoc.dy - ballSize / 2, ballBuffer),
+                        child: Container(
+                          width: ballSize / screenScalar,
+                          height: ballSize / screenScalar,
+                          decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(9999))),
+                        ),
+                      ),
+                    ];
+
+                    if (maxScoreY != null) {
+                      stackChildren.add(Positioned(
+                        left: 0,
+                        top: _scoreToY(
+                                maxScoreY, screenSize.width, ballWorldLoc.dy) -
+                            5,
+                        right: 0,
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(color: Colors.green),
+                        ),
+                      ));
+                    }
+                    return Stack(
+                        alignment: Alignment.center, children: stackChildren);
+                  })),
           AnimatedBuilder(
               animation: controller,
               builder: (context, _) {
                 double screenScalar = max(
-                    (_yToScore(ballLoc.dy, screenSize.height) + ballBuffer) /
+                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
+                            ballBuffer) /
                         screenSize.height,
                     1);
                 Size armSize = screenSize / screenScalar;
@@ -261,7 +263,8 @@ class _MyHomePageState extends State<MyHomePage>
               animation: controller,
               builder: (context, _) {
                 double screenScalar = max(
-                    (_yToScore(ballLoc.dy, screenSize.height) + ballBuffer) /
+                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
+                            ballBuffer) /
                         screenSize.height,
                     1);
                 Size armSize = screenSize / screenScalar;
@@ -290,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage>
                 child: AnimatedBuilder(
                   animation: controller,
                   builder: (context, _) => Text(
-                      "${maxScoreY == null ? 0 : _yToScore(ballLoc.dy, screenSize.height).round()}",
+                      "${maxScoreY == null ? 0 : _yToScore(ballWorldLoc.dy, screenSize.height).round()}",
                       style: TextStyle(fontSize: 48)),
                 )),
           )
