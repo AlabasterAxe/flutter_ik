@@ -3,13 +3,14 @@ import 'package:flutter/widgets.dart';
 
 import 'ik/bone.dart';
 import 'ik/anchor.dart';
+import 'view-transformation.dart';
 
 const double jointRadius = 30;
 
 class ArmPainter extends CustomPainter {
   final Anchor anchor;
-  final double scaleFactor;
-  ArmPainter(this.anchor, this.scaleFactor);
+  final ViewTransformation vt;
+  ArmPainter(this.anchor, this.vt);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -24,19 +25,18 @@ class ArmPainter extends CustomPainter {
     Paint blackStroke = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.stroke
-      ..strokeWidth = (jointRadius / 2) * scaleFactor;
+      ..strokeWidth = (jointRadius / 2) * vt.xm;
 
     Bone child = anchor.child;
     while (child != null) {
-      canvas.drawCircle(child.getAttachPoint() * scaleFactor,
-          jointRadius * scaleFactor, blackFill);
-      canvas.drawLine(child.getLoc() * scaleFactor,
-          child.getAttachPoint() * scaleFactor, blackStroke);
+      canvas.drawCircle(
+          vt.aToB(child.getAttachPoint()), jointRadius * vt.xm, blackFill);
+      canvas.drawLine(vt.aToB(child.getLoc()), vt.aToB(child.getAttachPoint()),
+          blackStroke);
       child = child.child;
     }
 
-    canvas.drawCircle(
-        anchor.loc * scaleFactor, jointRadius * scaleFactor, blueFill);
+    canvas.drawCircle(vt.aToB(anchor.loc), jointRadius * vt.xm, blueFill);
   }
 
   @override
@@ -47,13 +47,13 @@ class ArmPainter extends CustomPainter {
 
 class Arm extends StatelessWidget {
   final Anchor anchor;
-  final double scaleFactor;
-  const Arm({Key key, this.anchor, this.scaleFactor}) : super(key: key);
+  final ViewTransformation vt;
+  const Arm({Key key, this.anchor, this.vt}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: ArmPainter(anchor, scaleFactor),
+      painter: ArmPainter(anchor, vt),
     );
   }
 }

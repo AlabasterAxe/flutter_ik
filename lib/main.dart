@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_ik/view-transformation.dart';
 import 'package:flutter_ik/warning-tape-painter.dart';
 
 import 'arm_widget.dart';
@@ -143,9 +144,10 @@ class _MyHomePageState extends State<MyHomePage>
       offset = 0;
       scoreLock = _yToScore(ballWorldLoc.dy, screenSize.height).round();
     });
+    arm.loc = Offset(screenSize.width / 2, screenSize.height / 4);
     arm.child.angle = -pi / 2;
     arm.child.child.angle = -pi / 2;
-    ballWorldLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+    ballWorldLoc = Offset(screenSize.width / 4, screenSize.height / 4);
     ballFrozen = true;
     armLocked = false;
   }
@@ -154,10 +156,10 @@ class _MyHomePageState extends State<MyHomePage>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    _reset();
     Size screenSize = MediaQuery.of(context).size;
-    arm.loc = Offset(screenSize.width / 2, 3 / 4 * screenSize.height);
 
-    ballWorldLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
+    ballWorldLoc = Offset(screenSize.width / 4, screenSize.height / 4);
   }
 
   @override
@@ -195,19 +197,26 @@ class _MyHomePageState extends State<MyHomePage>
                             screenSize.height,
                         1);
                     Size armSize = screenSize / screenScalar;
+                    ViewTransformation vt = ViewTransformation(
+                        b: Rect.fromLTRB(
+                            0, 0, screenSize.width, screenSize.height),
+                        a: Rect.fromLTRB(
+                            -(screenSize.width - armSize.width) / 2,
+                            max(ballWorldLoc.dy + ballBuffer, screenSize.width),
+                            screenSize.width * screenScalar,
+                            0));
+
+                    Offset ballScreenLoc = vt.aToB(ballWorldLoc);
                     List<Widget> stackChildren = [
                       Positioned(
                           bottom: 0,
                           left: (screenSize.width - armSize.width) / 2,
                           width: armSize.width,
                           height: armSize.height,
-                          child:
-                              Arm(anchor: arm, scaleFactor: 1 / screenScalar)),
+                          child: Arm(anchor: arm, vt: vt)),
                       Positioned(
-                        left: (screenSize.width - armSize.width) / 2 +
-                            (ballWorldLoc.dx / screenScalar) -
-                            (ballSize / screenScalar) / 2,
-                        top: max(ballWorldLoc.dy - ballSize / 2, ballBuffer),
+                        left: ballScreenLoc.dx - (ballSize / screenScalar) / 2,
+                        top: ballScreenLoc.dy - (ballSize / screenScalar) / 2,
                         child: Container(
                           width: ballSize / screenScalar,
                           height: ballSize / screenScalar,
