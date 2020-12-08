@@ -9,7 +9,6 @@ import 'ik/anchor.dart';
 import 'ik/bone.dart';
 
 const double gravity = -100;
-const double dragCoefficient = 0;
 const double ballSize = 50;
 const double ballBuffer = 50;
 
@@ -78,7 +77,6 @@ class _MyHomePageState extends State<MyHomePage>
           maxScoreY = ballWorldLoc.dy;
         });
       }
-      ballWorldVelocity *= (1 - dragCoefficient * elapsedSeconds);
       ballWorldVelocity =
           ballWorldVelocity.translate(0, gravity * elapsedSeconds);
     }
@@ -147,12 +145,12 @@ class _MyHomePageState extends State<MyHomePage>
   Rect _getWorldViewRect(Size screenSize) {
     double screenScalar =
         max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
-    Size armSize = screenSize / screenScalar;
+    Size viewSize = screenSize * screenScalar;
     return Rect.fromLTRB(
-        -(screenSize.width - armSize.width) / 2,
-        max(ballWorldLoc.dy + ballBuffer, screenSize.height),
+        -(viewSize.width - screenSize.width) / 2,
+        screenSize.height * screenScalar,
         screenSize.width * screenScalar -
-            (screenSize.width - armSize.width) / 2,
+            (viewSize.width - screenSize.width) / 2,
         0);
   }
 
@@ -195,7 +193,6 @@ class _MyHomePageState extends State<MyHomePage>
                   builder: (context, _) {
                     double screenScalar = max(
                         (ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
-                    Size armSize = screenSize / screenScalar;
                     ViewTransformation vt = ViewTransformation(
                         to: Rect.fromLTRB(
                             0, 0, screenSize.width, screenSize.height),
@@ -222,7 +219,7 @@ class _MyHomePageState extends State<MyHomePage>
                       stackChildren.add(Positioned(
                         left: 0,
                         top: vt.forward(Offset(0, maxScoreY)).dy -
-                            ballSize / 2 -
+                            ballSize / screenScalar / 2 -
                             5,
                         right: 0,
                         child: Container(
