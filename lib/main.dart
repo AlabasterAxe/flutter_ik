@@ -181,22 +181,6 @@ class _MyHomePageState extends State<MyHomePage>
           _reset();
         },
         child: Stack(children: [
-          AnimatedBuilder(
-              animation: controller,
-              builder: (context, snapshot) {
-                double screenScalar = max(
-                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
-                            ballBuffer) /
-                        screenSize.height,
-                    1);
-                Size armSize = screenSize / screenScalar;
-                return Positioned(
-                    bottom: 0,
-                    left: (screenSize.width - armSize.width) / 2,
-                    width: armSize.width,
-                    height: armSize.height,
-                    child: Arm(anchor: arm, scaleFactor: 1 / screenScalar));
-              }),
           Positioned.fill(
               child: AnimatedBuilder(
                   animation: controller,
@@ -208,6 +192,13 @@ class _MyHomePageState extends State<MyHomePage>
                         1);
                     Size armSize = screenSize / screenScalar;
                     List<Widget> stackChildren = [
+                      Positioned(
+                          bottom: 0,
+                          left: (screenSize.width - armSize.width) / 2,
+                          width: armSize.width,
+                          height: armSize.height,
+                          child:
+                              Arm(anchor: arm, scaleFactor: 1 / screenScalar)),
                       Positioned(
                         left: (screenSize.width - armSize.width) / 2 +
                             (ballWorldLoc.dx / screenScalar) -
@@ -237,47 +228,27 @@ class _MyHomePageState extends State<MyHomePage>
                         ),
                       ));
                     }
+                    stackChildren.add(Positioned(
+                        left: 0,
+                        width: (screenSize.width - armSize.width) / 2,
+                        top: 0,
+                        bottom: 0,
+                        child: ClipRect(
+                            clipper: WarningTapeClipper(),
+                            child: CustomPaint(
+                                painter: WarningTapePainter(screenScalar)))));
+                    stackChildren.add(Positioned(
+                        right: 0,
+                        width: (screenSize.width - armSize.width) / 2,
+                        top: 0,
+                        bottom: 0,
+                        child: ClipRect(
+                            clipper: WarningTapeClipper(),
+                            child: CustomPaint(
+                                painter: WarningTapePainter(screenScalar)))));
                     return Stack(
                         alignment: Alignment.center, children: stackChildren);
                   })),
-          AnimatedBuilder(
-              animation: controller,
-              builder: (context, _) {
-                double screenScalar = max(
-                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
-                            ballBuffer) /
-                        screenSize.height,
-                    1);
-                Size armSize = screenSize / screenScalar;
-                return Positioned(
-                    left: 0,
-                    width: (screenSize.width - armSize.width) / 2,
-                    top: 0,
-                    bottom: 0,
-                    child: ClipRect(
-                        clipper: WarningTapeClipper(),
-                        child: CustomPaint(
-                            painter: WarningTapePainter(screenScalar))));
-              }),
-          AnimatedBuilder(
-              animation: controller,
-              builder: (context, _) {
-                double screenScalar = max(
-                    (_yToScore(ballWorldLoc.dy, screenSize.height) +
-                            ballBuffer) /
-                        screenSize.height,
-                    1);
-                Size armSize = screenSize / screenScalar;
-                return Positioned(
-                    right: 0,
-                    width: (screenSize.width - armSize.width) / 2,
-                    top: 0,
-                    bottom: 0,
-                    child: ClipRect(
-                        clipper: WarningTapeClipper(),
-                        child: CustomPaint(
-                            painter: WarningTapePainter(screenScalar))));
-              }),
           AnimatedAlign(
               duration: Duration(milliseconds: 300),
               alignment: Alignment(0, -.5 - offset),
@@ -293,7 +264,7 @@ class _MyHomePageState extends State<MyHomePage>
                 child: AnimatedBuilder(
                   animation: controller,
                   builder: (context, _) => Text(
-                      "${maxScoreY == null ? 0 : _yToScore(ballWorldLoc.dy, screenSize.height).round()}",
+                      "${_yToScore(ballWorldLoc.dy, screenSize.height).round()}",
                       style: TextStyle(fontSize: 48)),
                 )),
           )
