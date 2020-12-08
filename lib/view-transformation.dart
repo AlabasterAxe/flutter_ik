@@ -3,34 +3,34 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 
 class ViewTransformation {
-  Rect a;
-  Rect b;
+  Rect from;
+  Rect to;
 
   double xm;
 
   double ym;
 
-  ViewTransformation({this.a, this.b}) {
-    double aXSpan = this.a.right - this.a.left;
-    double bXSpan = this.b.right - this.b.left;
+  ViewTransformation({this.from, this.to}) {
+    double aXSpan = this.from.right - this.from.left;
+    double bXSpan = this.to.right - this.to.left;
 
     xm = aXSpan / bXSpan;
 
-    double aYSpan = this.a.top - this.a.bottom;
-    double bYSpan = this.b.top - this.b.bottom;
+    double aYSpan = this.from.top - this.from.bottom;
+    double bYSpan = this.to.top - this.to.bottom;
 
     ym = aYSpan / bYSpan;
   }
 
-  Offset aToB(Offset point) {
-    Offset shifted = point - Offset(a.left, a.bottom);
+  Offset forward(Offset point) {
+    Offset shifted = point - Offset(from.left, from.bottom);
     Offset scaled = Offset(shifted.dx / xm, shifted.dy / ym);
-    return scaled + Offset(b.left, b.bottom);
+    return scaled + Offset(to.left, to.bottom);
   }
 
-  Offset bToA(Offset point) {
-    Offset shifted = point - Offset(b.left, b.bottom);
+  Offset backward(Offset point) {
+    Offset shifted = point - Offset(to.left, to.bottom);
     Offset scaled = Offset(shifted.dx * xm, shifted.dy * ym);
-    return scaled + Offset(a.left, a.bottom);
+    return scaled + Offset(from.left, from.bottom);
   }
 }

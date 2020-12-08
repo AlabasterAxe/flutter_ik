@@ -25,18 +25,18 @@ class ArmPainter extends CustomPainter {
     Paint blackStroke = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.stroke
-      ..strokeWidth = (jointRadius / 2) * vt.xm;
+      ..strokeWidth = (jointRadius / 2) / vt.xm;
 
     Bone child = anchor.child;
     while (child != null) {
       canvas.drawCircle(
-          vt.aToB(child.getAttachPoint()), jointRadius * vt.xm, blackFill);
-      canvas.drawLine(vt.aToB(child.getLoc()), vt.aToB(child.getAttachPoint()),
-          blackStroke);
+          vt.forward(child.getAttachPoint()), jointRadius / vt.xm, blackFill);
+      canvas.drawLine(vt.forward(child.getLoc()),
+          vt.forward(child.getAttachPoint()), blackStroke);
       child = child.child;
     }
 
-    canvas.drawCircle(vt.aToB(anchor.loc), jointRadius * vt.xm, blueFill);
+    canvas.drawCircle(vt.forward(anchor.loc), jointRadius / vt.xm, blueFill);
   }
 
   @override

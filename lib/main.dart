@@ -157,9 +157,6 @@ class _MyHomePageState extends State<MyHomePage>
     super.didChangeDependencies();
 
     _reset();
-    Size screenSize = MediaQuery.of(context).size;
-
-    ballWorldLoc = Offset(screenSize.width / 4, screenSize.height / 4);
   }
 
   @override
@@ -172,14 +169,36 @@ class _MyHomePageState extends State<MyHomePage>
         onPanUpdate: (DragUpdateDetails deets) {
           setState(() {
             if (!armLocked) {
-              arm.solve(deets.globalPosition);
+              double screenScalar =
+                  max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
+              Size armSize = screenSize / screenScalar;
+              ViewTransformation vt = ViewTransformation(
+                  from:
+                      Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
+                  to: Rect.fromLTRB(
+                      -(screenSize.width - armSize.width) / 2,
+                      max(ballWorldLoc.dy + ballBuffer, screenSize.width),
+                      screenSize.width * screenScalar,
+                      0));
+              arm.solve(vt.forward(deets.globalPosition));
             }
           });
         },
         onPanStart: (DragStartDetails deets) {
           setState(() {
             if (!armLocked) {
-              arm.solve(deets.globalPosition);
+              double screenScalar =
+                  max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
+              Size armSize = screenSize / screenScalar;
+              ViewTransformation vt = ViewTransformation(
+                  from:
+                      Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
+                  to: Rect.fromLTRB(
+                      -(screenSize.width - armSize.width) / 2,
+                      max(ballWorldLoc.dy + ballBuffer, screenSize.width),
+                      screenSize.width * screenScalar,
+                      0));
+              arm.solve(vt.forward(deets.globalPosition));
             }
           });
         },
@@ -192,21 +211,18 @@ class _MyHomePageState extends State<MyHomePage>
                   animation: controller,
                   builder: (context, _) {
                     double screenScalar = max(
-                        (_yToScore(ballWorldLoc.dy, screenSize.height) +
-                                ballBuffer) /
-                            screenSize.height,
-                        1);
+                        (ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
                     Size armSize = screenSize / screenScalar;
                     ViewTransformation vt = ViewTransformation(
-                        b: Rect.fromLTRB(
+                        to: Rect.fromLTRB(
                             0, 0, screenSize.width, screenSize.height),
-                        a: Rect.fromLTRB(
+                        from: Rect.fromLTRB(
                             -(screenSize.width - armSize.width) / 2,
                             max(ballWorldLoc.dy + ballBuffer, screenSize.width),
                             screenSize.width * screenScalar,
                             0));
 
-                    Offset ballScreenLoc = vt.aToB(ballWorldLoc);
+                    Offset ballScreenLoc = vt.forward(ballWorldLoc);
                     List<Widget> stackChildren = [
                       Positioned(
                           bottom: 0,
