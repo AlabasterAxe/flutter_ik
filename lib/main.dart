@@ -8,7 +8,7 @@ import 'arm_widget.dart';
 import 'ik/anchor.dart';
 import 'ik/bone.dart';
 
-const double gravity = 100;
+const double gravity = -100;
 const double dragCoefficient = 0;
 const double ballSize = 50;
 const double ballBuffer = 50;
