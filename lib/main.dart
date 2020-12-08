@@ -62,19 +62,6 @@ class _MyHomePageState extends State<MyHomePage>
     controller.addListener(_update);
   }
 
-  _yToScore(double y, double screenHeight) {
-    return -(y - screenHeight);
-  }
-
-  _scoreToY(double score, double screenHeight, double currentY) {
-    if (_yToScore(currentY, screenHeight) + 50 > screenHeight) {
-      return _yToScore(currentY, screenHeight) -
-          _yToScore(score, screenHeight) +
-          50;
-    }
-    return -_yToScore(score, screenHeight) + screenHeight - ballSize / 2;
-  }
-
   _update() {
     if (!controller.isAnimating) {
       return;
@@ -86,9 +73,7 @@ class _MyHomePageState extends State<MyHomePage>
     Size screenSize = MediaQuery.of(context).size;
     if (!ballFrozen) {
       ballWorldLoc += ballWorldVelocity * elapsedSeconds;
-      if (maxScoreY == null ||
-          _yToScore(ballWorldLoc.dy, screenSize.height) >
-              _yToScore(maxScoreY, screenSize.height)) {
+      if (maxScoreY == null || ballWorldLoc.dy > maxScoreY) {
         setState(() {
           maxScoreY = ballWorldLoc.dy;
         });
@@ -115,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage>
 
     if (ballWorldLoc.dx < ballSize / 2 ||
         ballWorldLoc.dx > screenSize.width - ballSize / 2 ||
-        ballWorldLoc.dy > screenSize.height + 30) {
+        ballWorldLoc.dy < -ballSize / 2) {
       ballFrozen = true;
       armLocked = true;
     }
@@ -142,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage>
     setState(() {
       currentScoreOpacity = 0;
       offset = 0;
-      scoreLock = _yToScore(ballWorldLoc.dy, screenSize.height).round();
+      scoreLock = ballWorldLoc.dy.round();
     });
     arm.loc = Offset(screenSize.width / 2, screenSize.height / 4);
     arm.child.angle = -pi / 2;
@@ -159,6 +144,18 @@ class _MyHomePageState extends State<MyHomePage>
     _reset();
   }
 
+  Rect _getWorldViewRect(Size screenSize) {
+    double screenScalar =
+        max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
+    Size armSize = screenSize / screenScalar;
+    return Rect.fromLTRB(
+        -(screenSize.width - armSize.width) / 2,
+        max(ballWorldLoc.dy + ballBuffer, screenSize.height),
+        screenSize.width * screenScalar -
+            (screenSize.width - armSize.width) / 2,
+        0);
+  }
+
   @override
   Widget build(BuildContext context) {
     Size screenSize = MediaQuery.of(context).size;
@@ -169,17 +166,10 @@ class _MyHomePageState extends State<MyHomePage>
         onPanUpdate: (DragUpdateDetails deets) {
           setState(() {
             if (!armLocked) {
-              double screenScalar =
-                  max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
-              Size armSize = screenSize / screenScalar;
               ViewTransformation vt = ViewTransformation(
                   from:
                       Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
-                  to: Rect.fromLTRB(
-                      -(screenSize.width - armSize.width) / 2,
-                      max(ballWorldLoc.dy + ballBuffer, screenSize.width),
-                      screenSize.width * screenScalar,
-                      0));
+                  to: _getWorldViewRect(screenSize));
               arm.solve(vt.forward(deets.globalPosition));
             }
           });
@@ -187,17 +177,10 @@ class _MyHomePageState extends State<MyHomePage>
         onPanStart: (DragStartDetails deets) {
           setState(() {
             if (!armLocked) {
-              double screenScalar =
-                  max((ballWorldLoc.dy + ballBuffer) / screenSize.height, 1);
-              Size armSize = screenSize / screenScalar;
               ViewTransformation vt = ViewTransformation(
                   from:
                       Rect.fromLTRB(0, 0, screenSize.width, screenSize.height),
-                  to: Rect.fromLTRB(
-                      -(screenSize.width - armSize.width) / 2,
-                      max(ballWorldLoc.dy + ballBuffer, screenSize.width),
-                      screenSize.width * screenScalar,
-                      0));
+                  to: _getWorldViewRect(screenSize));
               arm.solve(vt.forward(deets.globalPosition));
             }
           });
@@ -216,20 +199,11 @@ class _MyHomePageState extends State<MyHomePage>
                     ViewTransformation vt = ViewTransformation(
                         to: Rect.fromLTRB(
                             0, 0, screenSize.width, screenSize.height),
-                        from: Rect.fromLTRB(
-                            -(screenSize.width - armSize.width) / 2,
-                            max(ballWorldLoc.dy + ballBuffer, screenSize.width),
-                            screenSize.width * screenScalar,
-                            0));
+                        from: _getWorldViewRect(screenSize));
 
                     Offset ballScreenLoc = vt.forward(ballWorldLoc);
                     List<Widget> stackChildren = [
-                      Positioned(
-                          bottom: 0,
-                          left: (screenSize.width - armSize.width) / 2,
-                          width: armSize.width,
-                          height: armSize.height,
-                          child: Arm(anchor: arm, vt: vt)),
+                      Positioned.fill(child: Arm(anchor: arm, vt: vt)),
                       Positioned(
                         left: ballScreenLoc.dx - (ballSize / screenScalar) / 2,
                         top: ballScreenLoc.dy - (ballSize / screenScalar) / 2,
@@ -247,8 +221,8 @@ class _MyHomePageState extends State<MyHomePage>
                     if (maxScoreY != null) {
                       stackChildren.add(Positioned(
                         left: 0,
-                        top: _scoreToY(
-                                maxScoreY, screenSize.width, ballWorldLoc.dy) -
+                        top: vt.forward(Offset(0, maxScoreY)).dy -
+                            ballSize / 2 -
                             5,
                         right: 0,
                         child: Container(
@@ -259,7 +233,9 @@ class _MyHomePageState extends State<MyHomePage>
                     }
                     stackChildren.add(Positioned(
                         left: 0,
-                        width: (screenSize.width - armSize.width) / 2,
+                        width: (screenSize.width -
+                                vt.scaleForwards(screenSize.width)) /
+                            2,
                         top: 0,
                         bottom: 0,
                         child: ClipRect(
@@ -268,7 +244,9 @@ class _MyHomePageState extends State<MyHomePage>
                                 painter: WarningTapePainter(screenScalar)))));
                     stackChildren.add(Positioned(
                         right: 0,
-                        width: (screenSize.width - armSize.width) / 2,
+                        width: (screenSize.width -
+                                vt.scaleForwards(screenSize.width)) /
+                            2,
                         top: 0,
                         bottom: 0,
                         child: ClipRect(
@@ -281,8 +259,7 @@ class _MyHomePageState extends State<MyHomePage>
           AnimatedAlign(
               duration: Duration(milliseconds: 300),
               alignment: Alignment(0, -.5 - offset),
-              child: Text(
-                  "${maxScoreY == null ? 0 : _yToScore(maxScoreY, screenSize.height).round()}",
+              child: Text("${maxScoreY == null ? 0 : maxScoreY.round()}",
                   style: TextStyle(fontSize: 48))),
           AnimatedOpacity(
             duration: Duration(milliseconds: 300),
@@ -293,7 +270,7 @@ class _MyHomePageState extends State<MyHomePage>
                 child: AnimatedBuilder(
                   animation: controller,
                   builder: (context, _) => Text(
-                      "${scoreLock != null ? scoreLock : _yToScore(ballWorldLoc.dy, screenSize.height).round()}",
+                      "${scoreLock != null ? scoreLock : ballWorldLoc.dy.round()}",
                       style: TextStyle(fontSize: 48)),
                 )),
           )

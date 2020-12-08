@@ -54,8 +54,7 @@ class Anchor extends Attachable {
   }
 
   void solve(Offset target) {
-    // TODO: Generalize to more than two bones;
-    Bone bone1 = child; //<>//
+    Bone bone1 = child;
     Bone bone2 = bone1.child;
 
     List<Offset> jointPoints =
