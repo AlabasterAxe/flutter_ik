@@ -50,6 +50,8 @@ class _MyHomePageState extends State<MyHomePage>
   double offset = 0;
   double currentScoreOpacity = 0;
 
+  int scoreLock;
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +103,7 @@ class _MyHomePageState extends State<MyHomePage>
       setState(() {
         offset = .1;
         currentScoreOpacity = 1;
+        scoreLock = null;
       });
       ballWorldLoc -= overlap;
 
@@ -135,15 +138,16 @@ class _MyHomePageState extends State<MyHomePage>
   _reset() {
     Size screenSize = MediaQuery.of(context).size;
 
+    setState(() {
+      currentScoreOpacity = 0;
+      offset = 0;
+      scoreLock = _yToScore(ballWorldLoc.dy, screenSize.height).round();
+    });
     arm.child.angle = -pi / 2;
     arm.child.child.angle = -pi / 2;
     ballWorldLoc = Offset(screenSize.width / 4, 3 / 4 * screenSize.height);
     ballFrozen = true;
     armLocked = false;
-    setState(() {
-      currentScoreOpacity = 0;
-      offset = 0;
-    });
   }
 
   @override
@@ -264,7 +268,7 @@ class _MyHomePageState extends State<MyHomePage>
                 child: AnimatedBuilder(
                   animation: controller,
                   builder: (context, _) => Text(
-                      "${_yToScore(ballWorldLoc.dy, screenSize.height).round()}",
+                      "${scoreLock != null ? scoreLock : _yToScore(ballWorldLoc.dy, screenSize.height).round()}",
                       style: TextStyle(fontSize: 48)),
                 )),
           )
